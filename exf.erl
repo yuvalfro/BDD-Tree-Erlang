@@ -10,7 +10,7 @@
 -author("yuvalfro").
 
 %% API
--export([exp_to_bdd/2, solve_bdd/2]).
+-export([exp_to_bdd/2, solve_bdd/2, booleanGenerator/2]).
 
 %%---------------------------------- exp_to_bdd function - Returns the corresponding BDD tree representation for that Boolean function --------------
 
@@ -175,5 +175,35 @@ solve({Node,Left,Right},VarMap) ->
     0 -> solve(Left,VarMap)
   end;
 solve(Leaf, _) -> Leaf.                  % Leaf - so return the value of the leaf
+
+%%---------------------------------------------------------------------------------------------------------------------------------------------------
+
+%%---------------------------------- Boolean Generator - generates list of equations ----------------------------------------------------------------
+
+booleanGenerator(NumOfVars,NumOfEquations) -> booleanGenerator(NumOfVars,NumOfEquations,[]).
+booleanGenerator(_,0,N) -> N;                 % Finish creating all the requested number of equations
+booleanGenerator(V,E,N) ->
+  BoolFunc = createBoolFunc(V,V+1),
+  booleanGenerator(V,E-1,[BoolFunc|N]).
+
+%% Create a random boolean function
+createBoolFunc(V,0) -> randomVar(V);
+createBoolFunc(V,R) ->
+  % R is the maximum of the recursive calls we can make so the program won't run forever, V = NumOfVars
+  case rand:uniform(8) of
+    1 -> {'and',{createBoolFunc(V,R-1),createBoolFunc(V,R-1)}};
+    2 -> {'or',{createBoolFunc(V,R-1),createBoolFunc(V,R-1)}};
+    3 -> {'not', createBoolFunc(V,R-1)};
+    4 -> {'and',{randomVar(V),createBoolFunc(V,R-1)}};
+    5 -> {'or',{randomVar(V),createBoolFunc(V,R-1)}};
+    6 -> {'and',{createBoolFunc(V,R-1),randomVar(V)}};
+    7 -> {'or',{createBoolFunc(V,R-1),randomVar(V)}};
+    8 -> {'not', randomVar(V)}
+  end.
+
+%% Choose a random variable out of x1,...,xn where n = NumOfVars
+randomVar(NumOfVars) ->
+  ListOfVars = [list_to_atom(lists:flatten(io_lib:format("x~B", [X]))) || X <- lists:seq(1, NumOfVars)],  % Create list of [x1,...,xn]
+  lists:nth(rand:uniform(NumOfVars), ListOfVars).                                                         % Get random xi from the list
 
 %%---------------------------------------------------------------------------------------------------------------------------------------------------
